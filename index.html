@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vocalism</title>
+
+    <style>
+        body {
+            background-color: black;
+        }
+    </style>
+
+    <link rel="stylesheet" type="text/css" href="js/codemirror/codemirror.css">
+    <link rel="stylesheet" type="text/css" href="js/codemirror/tomorrow-night-eighties.css">
+
+</head>
+<body>
+<label for="code"></label><textarea id="code" name="code" style="display: none;">
+// hola, mundo!
+// to run code, press Cmd-Enter
+// to run a single line, press Shift-Enter
+
+s = Sampler()
+s.reverb()
+s.note(50)
+
+// go through each line individually!
+
+a = new Audio()
+a.record()
+a.stopRecord()
+a.volume(-10)
+a.reverse()
+a.speed(0.5)
+</textarea>
+
+<!--CodeMirror-->
+<script src="js/codemirror/codemirror.js"></script>
+<script src="js/codemirror/javascript.js"></script>
+
+<!--Tone.js-->
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/recorderjs/0.1.0/recorder.js"></script>-->
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.4.84/Tone.js"></script>-->
+<!--<script src="https://unpkg.com/tone@13.8.25/build/Tone.js"></script>-->
+<script src="js/Tone.js"></script>
+
+<script src="vocalism.js"></script>
+
+<script>
+    const cm = CodeMirror.fromTextArea(document.getElementById('code'), {
+        theme: 'tomorrow-night-eighties',
+        mode: {name: 'javascript', globallets: true},
+        lineWrapping: true,
+        styleSelectedText: true,
+        extraKeys: {
+            'Cmd-Enter': function () {
+                eval(cm.getValue())
+
+                // var result = function (str) {
+                //     return eval(str);
+                // }.call(new Vocalism().init(), cm.getValue());
+            },
+            'Shift-Enter': function () {
+                eval(cm.doc.getLine(cm.doc.getCursor().line))
+            }
+        }
+    });
+
+    cm.focus()
+</script>
+</body>
+</html>
