@@ -1,3 +1,9 @@
+/**
+ * Vocalism
+ * @author Kit Zellerbach
+ */
+
+
 function Vocalism() {
     // ...
 }
@@ -7,11 +13,11 @@ var chunks = [];
 var canvasWidth = 200;
 var canvasHeight = 50;
 
-const actx  = Tone.context;
-const dest  = actx.createMediaStreamDestination();
+const actx = Tone.context;
+const dest = actx.createMediaStreamDestination();
 var waveform = new Tone.Analyser('waveform', 256);
 var motu = new Tone.UserMedia();
-motu.open().then(function(){
+motu.open().then(function () {
     motu.connect(dest);
     motu.fan(waveform);
 });
@@ -51,6 +57,14 @@ function Sampler() {
         MARIMBA.connect(new Tone.PingPongDelay(a, b).toMaster());
     };
 
+    this.sequence = function (a, b) {
+        var seq = new Tone.Sequence(function (time, note) {
+            MARIMBA.triggerAttack(note);
+        }, a, b);
+        seq.start();
+        Tone.Transport.start();
+    };
+
     this.note = function (n) {
         console.log("trig");
         MARIMBA.triggerAttack(n);
@@ -73,7 +87,11 @@ function Audio() {
         var body = document.getElementsByTagName("body")[0];
         body.appendChild(canvas);
         this.waveContext = canvas.getContext("2d");
-        this.recordWidget = cm.doc.addLineWidget(cm.doc.getCursor().line, canvas, {coverGutter: false, noHScroll: true, above: false});
+        this.recordWidget = cm.doc.addLineWidget(cm.doc.getCursor().line, canvas, {
+            coverGutter: false,
+            noHScroll: true,
+            above: false
+        });
         var that = this;
 
         function recordLoop() {
@@ -107,14 +125,20 @@ function Audio() {
         var body = document.getElementsByTagName("body")[0];
         body.appendChild(canvas);
         this.waveContext = canvas.getContext("2d");
-        this.startWidget = cm.doc.addLineWidget(cm.doc.getCursor().line, canvas, {coverGutter: false, noHScroll: true, above: false});
+        this.startWidget = cm.doc.addLineWidget(cm.doc.getCursor().line, canvas, {
+            coverGutter: false,
+            noHScroll: true,
+            above: false
+        });
 
         var that = this;
+
         function startLoop() {
             requestAnimationFrame(startLoop);
             var waveformValues = that.waveform.getValue();
             drawWaveform(that.waveContext, waveformValues);
         }
+
         startLoop();
     };
 
@@ -128,6 +152,10 @@ function Audio() {
 
     this.pingPong = function (a, b) {
         this.player.connect(new Tone.PingPongDelay(a, b).toMaster());
+    };
+
+    this.bitCrusher = function (a) {
+        this.player.connect(new Tone.BitCrusher(a).toMaster());
     };
 
     this.reset = function () {
@@ -148,6 +176,19 @@ function Audio() {
         this.player.reverse = !this.player.reverse;
     };
 
+    this.loop = function () {
+        this.player.loop = !this.player.loop;
+    };
+
+    this.sequence = function (a, b) {
+        var that = this;
+        var seq = new Tone.Sequence(function (time, note) {
+            that.sampler.triggerAttack(note);
+        }, a, b);
+        seq.start();
+        Tone.Transport.start();
+    };
+
     this.recorder.ondataavailable = evt => chunks.push(evt.data);
     this.recorder.onstop = evt => {
         let blob = new Blob(chunks, {type: 'audio/ogg; codecs=opus'});
@@ -156,8 +197,12 @@ function Audio() {
         this.player = new Tone.Player({
             "url": URL.createObjectURL(blob),
             "autostart": false,
-            "loop": true
+            "loop": false
         }).fan(this.waveform).toMaster();
+
+        this.sampler = new Tone.Sampler({
+            "C3" : URL.createObjectURL(blob),
+        }).toMaster();
 
         chunks = [];
     };
@@ -177,7 +222,7 @@ function drawWaveform(waveContext, values) {
     for (var i = 1, len = values.length; i < len; i++) {
         var val = values[i] / 255;
         var x = canvasWidth * (i / len);
-        var y = (val * 100) * canvasHeight + canvasHeight/2;
+        var y = (val * 100) * canvasHeight + canvasHeight / 2;
         waveContext.lineTo(x, y);
     }
     waveContext.stroke();

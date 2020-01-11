@@ -20,9 +20,10 @@
 // to run code, press Cmd-Enter
 // to run a single line, press Shift-Enter
 
-s = Sampler()
+s = new Sampler()
 s.reverb()
-s.note(50)
+s.note(100)
+s.sequence(["C4", "E4", "G4", "A4"],"4n")
 
 // go through each line individually!
 
@@ -32,7 +33,14 @@ a.stopRecord()
 a.start()
 a.volume(-10)
 a.reverse()
+a.distort(0.5)
+a.pingPong("4n",0.2)
 a.speed(0.5)
+
+b = new Audio()
+b.record()
+b.stopRecord()
+b.start()
 </textarea>
 
 <!--CodeMirror-->
