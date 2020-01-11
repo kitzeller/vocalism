@@ -72,17 +72,18 @@ function Audio() {
 
         var body = document.getElementsByTagName("body")[0];
         body.appendChild(canvas);
-        var waveContext = canvas.getContext("2d");
+        this.waveContext = canvas.getContext("2d");
         this.recordWidget = cm.doc.addLineWidget(cm.doc.getCursor().line, canvas, {coverGutter: false, noHScroll: true, above: false});
+        var that = this;
 
-        function loop() {
-            requestAnimationFrame(loop);
+        function recordLoop() {
+            requestAnimationFrame(recordLoop);
             //get the waveform valeus and draw it
             var waveformValues = waveform.getValue();
-            drawWaveform(waveContext, waveformValues);
+            drawWaveform(that.waveContext, waveformValues);
         }
 
-        loop();
+        recordLoop();
     };
 
     this.stopRecord = function () {
@@ -105,15 +106,16 @@ function Audio() {
 
         var body = document.getElementsByTagName("body")[0];
         body.appendChild(canvas);
-        var waveContext = canvas.getContext("2d");
+        this.waveContext = canvas.getContext("2d");
         this.startWidget = cm.doc.addLineWidget(cm.doc.getCursor().line, canvas, {coverGutter: false, noHScroll: true, above: false});
 
-        function loop() {
-            requestAnimationFrame(loop);
-            var waveformValues = waveform.getValue();
-            drawWaveform(waveContext, waveformValues);
+        var that = this;
+        function startLoop() {
+            requestAnimationFrame(startLoop);
+            var waveformValues = that.waveform.getValue();
+            drawWaveform(that.waveContext, waveformValues);
         }
-        loop();
+        startLoop();
     };
 
     this.reverb = function () {
@@ -150,11 +152,12 @@ function Audio() {
     this.recorder.onstop = evt => {
         let blob = new Blob(chunks, {type: 'audio/ogg; codecs=opus'});
 
+        this.waveform = new Tone.Analyser('waveform', 256);
         this.player = new Tone.Player({
             "url": URL.createObjectURL(blob),
             "autostart": false,
             "loop": true
-        }).fan(waveform).toMaster();
+        }).fan(this.waveform).toMaster();
 
         chunks = [];
     };
