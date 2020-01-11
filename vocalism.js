@@ -3,15 +3,18 @@ function Vocalism() {
 }
 
 // Audio Recording
-var stream;
 var chunks = [];
+var canvasWidth = 200;
+var canvasHeight = 50;
 
-const handleSuccess = function (str) {
-    stream = str;
-};
-
-navigator.mediaDevices.getUserMedia({audio: true, video: false})
-    .then(handleSuccess);
+const actx  = Tone.context;
+const dest  = actx.createMediaStreamDestination();
+var waveform = new Tone.Analyser('waveform', 256);
+var motu = new Tone.UserMedia();
+motu.open().then(function(){
+    motu.connect(dest);
+    motu.fan(waveform);
+});
 
 var DIST = new Tone.Distortion(0.8).toMaster();
 var REVERB = new Tone.Convolver('https://s3-us-west-2.amazonaws.com/s.cdpn.io/969699/hm2_000_ortf_48k.mp3').toMaster();
@@ -57,22 +60,60 @@ function Sampler() {
 }
 
 function Audio() {
-    this.recorder = new MediaRecorder(stream);
+    this.recorder = new MediaRecorder(dest.stream);
 
     this.record = function () {
         this.recorder.start();
+
+        let canvas = document.createElement('canvas');
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        canvas.style.border = "1px solid";
+
+        var body = document.getElementsByTagName("body")[0];
+        body.appendChild(canvas);
+        var waveContext = canvas.getContext("2d");
+        this.recordWidget = cm.doc.addLineWidget(cm.doc.getCursor().line, canvas, {coverGutter: false, noHScroll: true, above: false});
+
+        function loop() {
+            requestAnimationFrame(loop);
+            //get the waveform valeus and draw it
+            var waveformValues = waveform.getValue();
+            drawWaveform(waveContext, waveformValues);
+        }
+
+        loop();
     };
 
     this.stopRecord = function () {
         this.recorder.stop();
+        this.recordWidget.clear();
     };
 
     this.stop = function () {
-        this.player.stop()
+        this.player.stop();
+        this.startWidget.clear();
     };
 
     this.start = function () {
-        this.player.start()
+        this.player.start();
+
+        let canvas = document.createElement('canvas');
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        canvas.style.border = "1px solid";
+
+        var body = document.getElementsByTagName("body")[0];
+        body.appendChild(canvas);
+        var waveContext = canvas.getContext("2d");
+        this.startWidget = cm.doc.addLineWidget(cm.doc.getCursor().line, canvas, {coverGutter: false, noHScroll: true, above: false});
+
+        function loop() {
+            requestAnimationFrame(loop);
+            var waveformValues = waveform.getValue();
+            drawWaveform(waveContext, waveformValues);
+        }
+        loop();
     };
 
     this.reverb = function () {
@@ -111,11 +152,30 @@ function Audio() {
 
         this.player = new Tone.Player({
             "url": URL.createObjectURL(blob),
-            "autostart": true,
+            "autostart": false,
             "loop": true
-        }).toMaster();
+        }).fan(waveform).toMaster();
 
         chunks = [];
     };
     return this;
+}
+
+function drawWaveform(waveContext, values) {
+    waveContext.canvas.width = canvasWidth;
+    waveContext.canvas.height = canvasHeight;
+    waveContext.clearRect(0, 0, canvasWidth, canvasHeight);
+    waveContext.clearColor = "black";
+    waveContext.beginPath();
+    waveContext.lineJoin = 'round';
+    waveContext.lineWidth = 1;
+    waveContext.strokeStyle = "white";
+    waveContext.moveTo(0, (values[0] / 255) * canvasHeight);
+    for (var i = 1, len = values.length; i < len; i++) {
+        var val = values[i] / 255;
+        var x = canvasWidth * (i / len);
+        var y = (val * 100) * canvasHeight + canvasHeight/2;
+        waveContext.lineTo(x, y);
+    }
+    waveContext.stroke();
 }

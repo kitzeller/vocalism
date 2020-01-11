@@ -29,6 +29,7 @@ s.note(50)
 a = new Audio()
 a.record()
 a.stopRecord()
+a.start()
 a.volume(-10)
 a.reverse()
 a.speed(0.5)
@@ -50,8 +51,9 @@ a.speed(0.5)
     const cm = CodeMirror.fromTextArea(document.getElementById('code'), {
         theme: 'tomorrow-night-eighties',
         mode: {name: 'javascript', globallets: true},
-        lineWrapping: true,
+        // lineWrapping: true,
         styleSelectedText: true,
+        lineNumbers: true,
         extraKeys: {
             'Cmd-Enter': function () {
                 eval(cm.getValue())
